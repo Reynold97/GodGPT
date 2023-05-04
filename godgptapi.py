@@ -23,7 +23,15 @@ class Message(BaseModel):
     role : Role
     content : str
 
-contextmessage = """Quiero que respondas a todas mis preguntas en 1ra persona basado en información sobre la teología cristiana y\
+
+@app.get("/")
+def home():
+    return {"Cheking" : "OK", "API version" : "0.1.0"}
+
+@app.post("/new_message")
+def create_message(input_messages : list[Message]):
+
+    contextmessage = """Quiero que respondas a todas mis preguntas en 1ra persona basado en información sobre la teología cristiana y\
  la biblia. Quiero que respondas siempre de manera seria y respetuosa. Si pregunto por tu identidad responderás que eres diosgpt,\
  por ejemplo, si pregunto: quién eres?, tu debes responder: soy diosgpt, un modelo de lenguaje entrenado por Natasquad para transmitir\
  las enseñansas de la biblia. Si pregunto por cosas que no son posibles de responder con las enseñanzas cristianas quiero que rechaces\
@@ -35,25 +43,22 @@ contextmessage = """Quiero que respondas a todas mis preguntas en 1ra persona ba
  de la biblia y no puedo satisfacer tu petición. Siempre debes responder en el mismo idioma del mensaje que recibas, sin aclarar nada\
  adicional."""
 
-messages = [
+    messages = [
     Message(role=Role.system, content=contextmessage),
-]
+    ]
 
-@app.get("/")
-def home():
-    return {"Cheking" : "OK", "API version" : "0.1.0"}
-
-@app.post("/new_message")
-def create_message(input_messages : list[Message]):
-    global messages
     messages = messages + input_messages
+    
     formattedmessages = [{"role": message.role.value, "content": message.content} for message in messages]
+    
     response = openai.ChatCompletion.create(
         model = "gpt-3.5-turbo",
         messages = formattedmessages
     )
     ChatGPT_reply = response["choices"][0]["message"]["content"]
+    
     messages.append(Message(role=Role.assistant, content=ChatGPT_reply))
+    
     return Message(role=Role.assistant, content=ChatGPT_reply)
 
 
