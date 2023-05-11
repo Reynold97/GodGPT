@@ -10,4 +10,4 @@ COPY ./godgpt.py /GodGPT/godgpt.py
 
 COPY ./helper /GodGPT/helper/
 
-CMD ["uvicorn", "godgpt:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "godgpt:app", "--host", "0.0.0.0", "--port", "80"]
