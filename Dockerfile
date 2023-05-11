@@ -6,7 +6,7 @@ COPY ./requirements.txt /GodGPT/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /GodGPT/requirements.txt
 
-COPY ./sappgpt.py /GodGPT/sappgpt.py
+COPY ./godgpt.py /GodGPT/godgptgpt.py
 
 COPY ./helper /GodGPT/helper/
 
