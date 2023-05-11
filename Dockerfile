@@ -1,11 +1,13 @@
 FROM python:3.10
 
-WORKDIR /godgptAPI
+WORKDIR /GodGPT
 
-COPY ./requirements.txt /godgptAPI/requirements.txt
+COPY ./requirements.txt /GodGPT/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /godgptAPI/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /GodGPT/requirements.txt
 
-COPY ./godgptapi.py /godgptAPI/
+COPY ./sappgpt.py /GodGPT/sappgpt.py
 
-CMD ["uvicorn", "godgptapi:app", "--host", "0.0.0.0", "--port", "80"]
+COPY ./helper /GodGPT/helper/
+
+CMD ["uvicorn", "godgpt:app", "--host", "0.0.0.0", "--port", "8000"]
