@@ -68,7 +68,7 @@ translator = Translator()
 
 @app.get("/")
 async def home():
-    return {"Cheking" : "OK", "godgpt version" : "0.6.0"}
+    return {"Cheking" : "OK", "godgpt version" : "0.7.0"}
 
 
 @app.post("/new_message")
