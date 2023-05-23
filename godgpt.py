@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from fastapi.responses import PlainTextResponse
 from typing import Dict
 
+import asyncio
 import os
 
 load_dotenv()
@@ -66,42 +67,75 @@ async def home():
 
 
 @app.post("/new_message")
-def new_message(input_messages : list[Message]):
-    
-    result = create_message(input_messages)
-    
-    return Message(role=Role.assistant, content=result)
+async def new_message(input_messages : list[Message]):
+    try:
+        def run_chat():
+            result = create_message(input_messages)
+            return Message(role=Role.assistant, content=result)
+        
+        loop = asyncio.get_event_loop()
+        task = loop.run_in_executor(None, run_chat)
+        return await task
+    except:
+        return Message(role=Role.assistant, content="Sorry, your request could not be processed, please try again.")
 
 
 @app.post("/agent_message")
-def agent_message(input_messages : list[Message]):
-    
-    result = agent_executor.run(input_messages[0].content)
-    
-    return Message(role=Role.assistant, content=result)
+async def agent_message(input_messages : list[Message]):
+    try:
+        def run_agent():
+            result = agent_executor.run(input_messages[0].content)
+            return Message(role=Role.assistant, content=result)
 
+        loop = asyncio.get_event_loop()
+        task = loop.run_in_executor(None, run_agent)
+        return await task
+
+    except Exception as e:
+        return Message(role=Role.assistant, content="Sorry, your request could not be processed, please try again.")
+    
 
 @app.post("/twilio/new_message", response_class=PlainTextResponse)
 async def twiliomessage(request: Request) -> None:
-    
-    form_data: Dict[str, str] = await request.form()
-    input_message = form_data.get("Body")
-    sender_id = form_data.get("From")
+    try:
+        form_data: Dict[str, str] = await request.form()
+        input_message = form_data.get("Body")
+        sender_id = form_data.get("From")
 
-    message = [
-    Message(role=Role.user, content=input_message),
-    ]
+        message = [
+        Message(role=Role.user, content=input_message),
+        ]
 
-    result = create_message(message)
-    
-    send_message(sender_id, result)
+        def run_chat():
+            result = create_message(message)
+            return result
+        
+        loop = asyncio.get_event_loop()
+        task = loop.run_in_executor(None, run_chat)
+        new_message = await task
+
+        send_message(sender_id, new_message)
+    except:
+        error_mesage = "Sorry, your request could not be processed, please try again."
+        send_message(sender_id, error_mesage)
+
 
 @app.post("/twilio/agent_message")
 async def twilio_agent_message(request: Request) -> None:
-    form_data: Dict[str, str] = await request.form()
-    input_message = form_data.get("Body")
-    sender_id = form_data.get("From")
+    try:
+        form_data: Dict[str, str] = await request.form()
+        input_message = form_data.get("Body")
+        sender_id = form_data.get("From")
 
-    result = agent_executor.run(input_message)
+        def run_agent():
+            result = agent_executor.run(input_message)
+            return result
+        
+        loop = asyncio.get_event_loop()
+        task = loop.run_in_executor(None, run_agent)
+        new_message = await task
     
-    send_message(sender_id, result)
+        send_message(sender_id, new_message)
+    except:
+        error_mesage = "Sorry, your request could not be processed, please try again."
+        send_message(sender_id, error_mesage)
