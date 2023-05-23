@@ -3,7 +3,7 @@ from langchain import LLMChain, PromptTemplate
 
 class Translator:
     @staticmethod
-    def detect_language(llm, input_text=''):
+    def detect_language(llm, input_text):
         template = """You are a language detector agent. Your task is to output the language corresponding to a given human input. Just output one language corresponding to the human input
                     Input: {input_text}
                     Language:"""
@@ -15,7 +15,7 @@ class Translator:
         return response
 
     @staticmethod
-    def translate(llm, input_text='', destination_language='English'):
+    def translate(llm, input_text, destination_language):
         template = """
                     You are a language translator agent. Your goal is to translate a given Input Text from any language into {destination_language} language.\
                     \
