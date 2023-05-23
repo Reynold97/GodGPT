@@ -7,9 +7,11 @@ from god_agent.agent_utils import CustomOutputParser, CustomPromptTemplate
 from helper.classes import Role, Message
 from helper.openai_api import create_message
 from helper.twilio_api import send_message
+from helper.translator import Translator
+
 from fastapi import FastAPI, Request
-from dotenv import load_dotenv
 from fastapi.responses import PlainTextResponse
+from dotenv import load_dotenv
 from typing import Dict
 
 import asyncio
@@ -21,6 +23,7 @@ app = FastAPI()
 
 # Define which tools the agent can use to answer user queries
 search = SerpAPIWrapper(serpapi_api_key=os.getenv("SERPAPI_API_KEY"))
+
 tools = [
     Tool(
         name = "Search",
@@ -42,7 +45,7 @@ prompt = CustomPromptTemplate(
 
 output_parser = CustomOutputParser()
 
-llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
+llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=1)
 
 # LLM chain consisting of the LLM and a prompt
 llm_chain = LLMChain(llm=llm, prompt=prompt)
@@ -58,7 +61,9 @@ agent = LLMSingleActionAgent(
 
 agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=False)
 
+translator_llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
 
+translator = Translator()
 
 
 @app.get("/")
@@ -71,7 +76,10 @@ async def new_message(input_messages : list[Message]):
     try:
         def run_chat():
             result = create_message(input_messages)
-            return Message(role=Role.assistant, content=result)
+            input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
+            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+
+            return Message(role=Role.assistant, content=translated_message)
         
         loop = asyncio.get_event_loop()
         task = loop.run_in_executor(None, run_chat)
@@ -84,8 +92,11 @@ async def new_message(input_messages : list[Message]):
 async def agent_message(input_messages : list[Message]):
     try:
         def run_agent():
-            result = agent_executor.run(input_messages[0].content)
-            return Message(role=Role.assistant, content=result)
+            result = agent_executor.run(input_messages[len(input_messages)-1].content)
+            input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
+            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+
+            return Message(role=Role.assistant, content=translated_message)
 
         loop = asyncio.get_event_loop()
         task = loop.run_in_executor(None, run_agent)
@@ -108,7 +119,10 @@ async def twiliomessage(request: Request) -> None:
 
         def run_chat():
             result = create_message(message)
-            return result
+            input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
+            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+
+            return translated_message
         
         loop = asyncio.get_event_loop()
         task = loop.run_in_executor(None, run_chat)
@@ -129,7 +143,10 @@ async def twilio_agent_message(request: Request) -> None:
 
         def run_agent():
             result = agent_executor.run(input_message)
-            return result
+            input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
+            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+
+            return translated_message
         
         loop = asyncio.get_event_loop()
         task = loop.run_in_executor(None, run_agent)
