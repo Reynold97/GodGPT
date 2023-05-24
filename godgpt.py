@@ -73,86 +73,85 @@ async def home():
 
 @app.post("/new_message")
 async def new_message(input_messages : list[Message]):
-    try:
-        def run_chat():
-            result = create_message(input_messages)
-            input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
-            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
-
-            return Message(role=Role.assistant, content=translated_message)
-        
-        loop = asyncio.get_event_loop()
-        task = loop.run_in_executor(None, run_chat)
-        return await task
+    try:            
+        try:
+            def run_chat():
+                new_message = create_message(input_messages)  
+                return new_message
+            
+            loop = asyncio.get_event_loop()
+            task = loop.run_in_executor(None, run_chat)
+            result = await task
+        except:
+            result = "Sorry, your request could not be processed, please try again and rephrase the question."    
+        input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
+        translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+        return  Message(role= Role.assistant, content= translated_message)
     except:
-        return Message(role=Role.assistant, content="Sorry, your request could not be processed, please try again.")
+        return Message(role= Role.assistant, content= "Sorry, your request could not be processed, please try again and rephrase the question.")
 
 
 @app.post("/agent_message")
 async def agent_message(input_messages : list[Message]):
-    try:
-        def run_agent():
-            result = agent_executor.run(input_messages[len(input_messages)-1].content)
-            input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
-            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
-
-            return Message(role=Role.assistant, content=translated_message)
-
-        loop = asyncio.get_event_loop()
-        task = loop.run_in_executor(None, run_agent)
-        return await task
-
-    except Exception as e:
-        return Message(role=Role.assistant, content="Sorry, your request could not be processed, please try again.")
+    try:   
+        try:
+            def run_agent():
+                agent_message = agent_executor.run(input_messages[len(input_messages)-1].content)                
+                return agent_message
+            loop = asyncio.get_event_loop()
+            task = loop.run_in_executor(None, run_agent)
+            result = await task
+        except Exception as e:
+            result = "Sorry, your request could not be processed, please try again and rephrase the question."        
+        input_language = translator.detect_language(llm=translator_llm, input_text=input_messages[len(input_messages)-1].content)
+        translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+        return  Message(role= Role.assistant, content= translated_message)
+    except:
+        return  Message(role= Role.assistant, content= "Sorry, your request could not be processed, please try again and rephrase the question.")
     
 
 @app.post("/twilio/new_message", response_class=PlainTextResponse)
 async def twiliomessage(request: Request) -> None:
     try:
-        form_data: Dict[str, str] = await request.form()
-        input_message = form_data.get("Body")
-        sender_id = form_data.get("From")
-
-        message = [
-        Message(role=Role.user, content=input_message),
-        ]
-
-        def run_chat():
-            result = create_message(message)
-            input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
-            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
-
-            return translated_message
-        
-        loop = asyncio.get_event_loop()
-        task = loop.run_in_executor(None, run_chat)
-        new_message = await task
-
-        send_message(sender_id, new_message)
+        try:
+            form_data: Dict[str, str] = await request.form()
+            input_message = form_data.get("Body")
+            sender_id = form_data.get("From")
+            message = [
+            Message(role=Role.user, content=input_message),
+            ]
+            def run_chat():
+                new_message = create_message(message)                
+                return new_message            
+            loop = asyncio.get_event_loop()
+            task = loop.run_in_executor(None, run_chat)
+            result = await task
+        except:
+            result = "Sorry, your request could not be processed, please try again."                
+        input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
+        translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+        send_message(sender_id, translated_message)
     except:
-        error_mesage = "Sorry, your request could not be processed, please try again."
-        send_message(sender_id, error_mesage)
-
+        send_message(sender_id, "Sorry, your request could not be processed, please try again.")
+        
 
 @app.post("/twilio/agent_message")
 async def twilio_agent_message(request: Request) -> None:
-    try:
-        form_data: Dict[str, str] = await request.form()
-        input_message = form_data.get("Body")
-        sender_id = form_data.get("From")
-
-        def run_agent():
-            result = agent_executor.run(input_message)
-            input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
-            translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
-
-            return translated_message
-        
-        loop = asyncio.get_event_loop()
-        task = loop.run_in_executor(None, run_agent)
-        new_message = await task
-    
-        send_message(sender_id, new_message)
+    try:    
+        try:
+            form_data: Dict[str, str] = await request.form()
+            input_message = form_data.get("Body")
+            sender_id = form_data.get("From")
+            def run_agent():
+                agent_message = agent_executor.run(input_message)                
+                return agent_message            
+            loop = asyncio.get_event_loop()
+            task = loop.run_in_executor(None, run_agent)
+            result = await task           
+        except:
+            result = "Sorry, your request could not be processed, please try again."            
+        input_language = translator.detect_language(llm=translator_llm, input_text=input_message)
+        translated_message = translator.translate(llm=translator_llm, input_text=result, destination_language=input_language)
+        send_message(sender_id, translated_message)
     except:
-        error_mesage = "Sorry, your request could not be processed, please try again."
-        send_message(sender_id, error_mesage)
+        send_message(sender_id, "Sorry, your request could not be processed, please try again.")
