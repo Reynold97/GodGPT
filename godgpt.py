@@ -68,7 +68,7 @@ translator = Translator()
 
 @app.get("/")
 async def home():
-    return {"Cheking" : "OK", "godgpt version" : "0.7.0"}
+    return {"Cheking" : "OK", "godgpt version" : "0.8.0"}
 
 
 @app.post("/new_message")
@@ -133,7 +133,7 @@ async def twiliomessage(request: Request) -> None:
         send_message(sender_id, translated_message)
     except:
         send_message(sender_id, "Sorry, your request could not be processed, please try again.")
-        
+
 
 @app.post("/twilio/agent_message")
 async def twilio_agent_message(request: Request) -> None:
