@@ -12,4 +12,4 @@ COPY ./god_agent /GodGPT/god_agent/
 
 COPY ./godgpt.py /GodGPT/godgpt.py
 
-CMD ["uvicorn", "godgpt:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "godgpt:app", "--host", "0.0.0.0", "--port", "8080"]
